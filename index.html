@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RiskRadar - Disaster Monitor</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --flood-color: #2196F3;
+            --disaster-color: #FF5722;
+            --background: #1A1A1A;
+            --card-bg: #2D2D2D;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: var(--background);
+            color: white;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            border-bottom: 1px solid #3D3D3D;
+        }
+
+        .dashboard-title {
+            font-size: 2.2em;
+            margin: 0 0 10px 0;
+            background: linear-gradient(45deg, var(--flood-color), var(--disaster-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .model-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .model-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .model-header {
+            border-left: 4px solid;
+            padding-left: 15px;
+            margin-bottom: 25px;
+        }
+
+        .flood-header {
+            border-color: var(--flood-color);
+        }
+
+        .disaster-header {
+            border-color: var(--disaster-color);
+        }
+
+        .visualization-container {
+            height: 400px;
+            background: #3D3D3D;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background: #3D3D3D;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #3D3D3D;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .model-container {
+                padding: 0 15px;
+            }
+            
+            .visualization-container {
+                height: 300px;
+            }
+            
+            .metric-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">RiskRadar Threat Monitor</h1>
+        <p>Integrated Disaster Prediction System</p>
+    </div>
+
+    <div class="model-container">
+        <!-- Flood Prediction Card -->
+        <div class="model-card">
+            <div class="model-header flood-header">
+                <h2>🌊 Flood Risk Analysis</h2>
+                <p>Real-time hydrological monitoring</p>
+            </div>
+
+            <div class="visualization-container" id="floodMap"></div>
+
+            <div class="status-indicator">
+                <div style="background: var(--flood-color); padding: 10px; border-radius: 8px; margin-right: 15px;">
+                    🌧
+                </div>
+                <div>
+                    <h3>Current Risk: <span id="floodRiskLevel">-</span></h3>
+                    <p>Confidence: <span id="floodConfidence">-</span>%</p>
+                </div>
+            </div>
+
+            <div class="metric-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="precipitation">- mm</div>
+                    <small>Precipitation</small>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="elevation">- m</div>
+                    <small>Elevation</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Satellite Analysis Card -->
+        <div class="model-card">
+            <div class="model-header disaster-header">
+                <h2>🛰 Satellite Threat Detection</h2>
+                <p>AI-powered image analysis</p>
+            </div>
+
+            <div class="visualization-container" style="position: relative;">
+                <img src="satellite-placeholder.jpg" style="width:100%;height:100%;object-fit:cover;">
+                <div id="satelliteAlert" style="position: absolute; top: 10px; left: 10px; background: rgba(255,0,0,0.8); color: white; padding: 10px; border-radius: 5px; display: none;"></div>
+            </div>
+
+            <div class="status-indicator">
+                <div style="background: var(--disaster-color); padding: 10px; border-radius: 8px; margin-right: 15px;">
+                    ⚠
+                </div>
+                <div>
+                    <h3>Current Status: <span id="satelliteStatusText">-</span></h3>
+                    <p>Confidence: <span id="satelliteConfidence">-</span>%</p>
+                </div>
+            </div>
+
+            <div class="metric-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="detectionRate">- %</div>
+                    <small>Detection Accuracy</small>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="responseTime">- ms</div>
+                    <small>Response Time</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let floodMap;
+
+        // Initialize Map
+        function initMap() {
+            floodMap = L.map('floodMap').setView([20, 0], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(floodMap);
+        }
+
+        // Update Functions
+        function updateFloodStatus(data) {
+            document.getElementById('floodRiskLevel').textContent = data.riskLevel;
+            document.getElementById('floodConfidence').textContent = data.confidence;
+            document.getElementById('precipitation').textContent = ${(Math.random() * 200).toFixed(1)} mm;
+            document.getElementById('elevation').textContent = ${(Math.random() * 1000).toFixed(0)} m;
+        }
+
+        function updateSatelliteStatus(data) {
+            const alertElem = document.getElementById('satelliteAlert');
+            document.getElementById('satelliteStatusText').textContent = data.status.toUpperCase();
+            document.getElementById('satelliteConfidence').textContent = data.confidence;
+            
+            if(data.status === 'disaster') {
+                alertElem.style.display = 'block';
+                alertElem.textContent = ALERT: ${data.image};
+            } else {
+                alertElem.style.display = 'none';
+            }
+        }
+
+        // Initialize Application
+        initMap();
+        
+        // WebSocket Handlers
+        socket.on('flood-prediction', updateFloodStatus);
+        socket.on('satellite-update', updateSatelliteStatus);
+
+        // Simulate Data Requests
+        setInterval(() => {
+            socket.emit('request-flood-prediction', {
+                lat: Math.random() * 180 - 90,
+                lng: Math.random() * 360 - 180,
+                elevation: Math.random() * 1000,
+                precipitation: Math.random() * 200
+            });
+        }, 5000);
+
+        // Start satellite processing
+        socket.emit('process-satellite-images');
+    </script>
+</body>
+</html>
