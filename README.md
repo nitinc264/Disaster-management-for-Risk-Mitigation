@@ -1,6 +1,4 @@
 # 🌍 Disaster Management and Real-Time Prediction for Risk Mitigation
-
-### 🚀 Built at [Hackathon Name] | Team Legacy  
 **Theme:** Sustainability  
 **Domain:** Data Science / Machine Learning / AI  
 
