@@ -2,7 +2,7 @@
 **Theme:** Sustainability  
 **Domain:** Data Science / Machine Learning / AI  
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="100%">
 
 ## 📌 Problem Statement
 
@@ -14,7 +14,7 @@ Natural disasters cause significant damage to life, infrastructure, and the envi
 - Limited integration of satellite, sensor, and social media data
 - Inefficient resource deployment
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="100%">
 
 ## 💡 Our Solution
 
@@ -25,7 +25,7 @@ We developed an **AI-powered, multi-layered disaster management platform** that 
 - 📢 **Real-Time Situational Awareness** to guide emergency response teams  
 - 📊 **Interactive Dashboards** for monitoring and decision-making
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="100%">
 
 ## 🧠 Architecture Overview
 
